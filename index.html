@@ -3,43 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romence Kelime Ustası</title>
+    <title>Romanian Data Trainer</title>
     <style>
-        :root { --p: #3b82f6; --s: #22c55e; --d: #ef4444; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 1.2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 480px; text-align: center; }
-        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; font-size: 0.85rem; }
-        .word { font-size: 2.5rem; font-weight: 800; margin: 20px 0; color: #1e293b; min-height: 80px; display: flex; align-items: center; justify-content: center; }
-        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; outline: none; text-align: center; }
-        input:focus { border-color: var(--p); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-        .feedback { margin-top: 15px; min-height: 40px; font-weight: 600; font-size: 1rem; }
-        .progress-text { font-size: 0.75rem; color: #94a3b8; margin-top: 10px; }
-        .btn-reset { margin-top: 20px; background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
+        :root { --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; --bg: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #1e293b; }
+        .container { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; }
+        
+        /* Analist Paneli Tasarımı */
+        .analytics-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; margin-bottom: 1.5rem; }
+        .progress-container { background: #e2e8f0; border-radius: 10px; height: 12px; margin: 10px 0; overflow: hidden; }
+        #progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.5s ease; }
+        .stat-grid { display: flex; justify-content: space-around; font-size: 0.8rem; font-weight: bold; }
+        
+        .word-box { margin: 2rem 0; }
+        .rom-word { font-size: 2.8rem; font-weight: 800; color: #0f172a; margin: 0; }
+        input { width: 100%; padding: 1rem; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 1.1rem; text-align: center; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        
+        .feedback { margin-top: 1rem; min-height: 45px; font-weight: 600; }
+        .btn-reset { margin-top: 1.5rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="stats">
-        <span style="color: var(--s)">Öğrenilen: <span id="learned-count">0</span></span>
-        <span style="color: #64748b">Kalan: <span id="remaining-count">0</span></span>
-        <span style="color: var(--d)">Hata: <span id="wrong-count">0</span></span>
+    <div class="analytics-card">
+        <div class="stat-grid">
+            <div style="color: var(--success)">ÖĞRENİLDİ: <span id="learned-count">0</span></div>
+            <div style="color: var(--primary)">BAŞARI: %<span id="accuracy">0</span></div>
+            <div style="color: #64748b">KALAN: <span id="rem-count">0</span></div>
+        </div>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div style="font-size: 0.7rem; color: #94a3b8;">GENEL İLERLEME ANALİZİ</div>
     </div>
 
-    <div class="word" id="display-word">Yükleniyor...</div>
-    
-    <input type="text" id="answer-input" placeholder="Türkçesini yazın..." autocomplete="off">
-    
-    <div class="feedback" id="feedback"></div>
-    <div class="progress-text" id="status-text">Kelimeler karıştırılıyor...</div>
+    <div class="word-box">
+        <div class="rom-word" id="target-word">Yükleniyor...</div>
+    </div>
 
-    <button class="btn-reset" onclick="resetGame()">İlerlemeyi Sıfırla</button>
+    <input type="text" id="user-input" placeholder="Türkçe karşılığını analiz edin..." autocomplete="off">
+    
+    <div class="feedback" id="feedback-msg"></div>
+
+    <button class="btn-reset" onclick="resetData()">Verileri Sıfırla ve Yeniden Başlat</button>
 </div>
 
 <script>
-    // --- KELİME LİSTESİ ---
-    const rawVocabulary = [
-        { rom: "o, o", tr: "a, bir" },
+    // --- VERİ SETİ ---
+    const rawData = [
+       { rom: "o, o", tr: "a, bir" },
 { rom: "abandon", tr: "terk etmek" },
 { rom: "abilitate", tr: "kabiliyet" },
 { rom: "in stare", tr: "yapabilmek" },
@@ -3036,108 +3050,90 @@
 { rom: "zona", tr: "bölge" },
     ];
 
-    // --- OYUN MANTIĞI ---
     let vocabulary = [];
-    let wrongs = 0;
-    let learnedCount = 0;
+    let totalAttempts = parseInt(localStorage.getItem('total_att') || "0");
+    let correctAttempts = parseInt(localStorage.getItem('correct_att') || "0");
 
-    // LocalStorage'dan verileri çek veya yeni başlat
     function init() {
-        const savedData = localStorage.getItem('romence_v3');
-        if (savedData) {
-            vocabulary = JSON.parse(savedData);
+        const saved = localStorage.getItem('rom_v4');
+        if (saved) {
+            vocabulary = JSON.parse(saved);
         } else {
-            // İlk kez başlıyorsa listeyi karıştır ve skor ekle
-            vocabulary = rawVocabulary
-                .map(item => ({ ...item, score: 0 }))
-                .sort(() => Math.random() - 0.5);
+            vocabulary = rawData.map(item => ({ ...item, score: 0 })).sort(() => Math.random() - 0.5);
         }
-        wrongs = parseInt(localStorage.getItem('romence_wrongs') || "0");
-        updateStats();
-        showWord();
+        updateDashboard();
+        renderWord();
     }
 
-    function showWord() {
+    function updateDashboard() {
+        const totalRaw = rawData.length;
+        const currentInList = vocabulary.length;
+        const learned = totalRaw - currentInList;
+        
+        // İlerleme Çubuğu Hesaplama
+        const progressPercent = (learned / totalRaw) * 100;
+        document.getElementById('progress-bar').style.width = progressPercent + "%";
+        document.getElementById('learned-count').textContent = learned;
+        document.getElementById('rem-count').textContent = currentInList;
+
+        // Başarı Oranı Analizi (Accuracy Rate)
+        const accuracy = totalAttempts === 0 ? 0 : Math.round((correctAttempts / totalAttempts) * 100);
+        document.getElementById('accuracy').textContent = accuracy;
+
+        localStorage.setItem('rom_v4', JSON.stringify(vocabulary));
+        localStorage.setItem('total_att', totalAttempts);
+        localStorage.setItem('correct_att', correctAttempts);
+    }
+
+    function renderWord() {
         if (vocabulary.length === 0) {
-            document.getElementById('display-word').textContent = "🎉 Tebrikler!";
-            document.getElementById('answer-input').style.display = "none";
-            document.getElementById('feedback').textContent = "Tüm kelimeleri öğrendiniz.";
+            document.getElementById('target-word').textContent = "📊 ANALİZ TAMAMLANDI!";
+            document.getElementById('user-input').style.display = "none";
             return;
         }
-
-        const current = vocabulary[0];
-        document.getElementById('display-word').textContent = current.rom;
-        document.getElementById('answer-input').value = "";
-        document.getElementById('answer-input').disabled = false;
-        document.getElementById('answer-input').focus();
+        document.getElementById('target-word').textContent = vocabulary[0].rom;
+        const input = document.getElementById('user-input');
+        input.value = "";
+        input.disabled = false;
+        input.focus();
     }
 
-    document.getElementById('answer-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            check();
-        }
+    document.getElementById('user-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkLogic();
     });
 
-    function check() {
-        const input = document.getElementById('answer-input');
-        const feedback = document.getElementById('feedback');
+    function checkLogic() {
+        const input = document.getElementById('user-input');
+        const feedback = document.getElementById('feedback-msg');
         const userVal = input.value.trim().toLowerCase();
-        
         if (!userVal) return;
 
-        const correctData = vocabulary[0].tr.toLowerCase();
-        const validAnswers = correctData.split(',').map(s => s.trim());
-
+        totalAttempts++;
+        const correctAnswers = vocabulary[0].tr.toLowerCase().split(',').map(s => s.trim());
         input.disabled = true;
 
-        if (validAnswers.includes(userVal)) {
-            // DOĞRU CEVAP
+        if (correctAnswers.includes(userVal)) {
+            correctAttempts++;
             vocabulary[0].score += 1;
-            feedback.innerHTML = "<span style='color: var(--s)'>✅ Doğru!</span>";
-            
-            let item = vocabulary.shift(); // Baştan al
-
-            if (item.score >= 3) {
-                // 3 kez bilenince listeden tamamen çıkar (Öğrenildi)
-                learnedCount = parseInt(localStorage.getItem('romence_learned') || "0") + 1;
-                localStorage.setItem('romence_learned', learnedCount);
-            } else {
-                // Henüz öğrenilmedi, araya 15 kelime koy (Aralıklı Tekrar)
-                vocabulary.splice(15, 0, item);
-            }
-            
-            setTimeout(() => { feedback.textContent = ""; showWord(); }, 1000);
-        } else {
-            // YANLIŞ CEVAP
-            wrongs++;
-            vocabulary[0].score = 0; // Skoru sıfırla
-            feedback.innerHTML = `<span style='color: var(--d)'>❌ Yanlış!</span><br><small>Doğru cevap: ${vocabulary[0].tr}</small>`;
+            feedback.innerHTML = "<span style='color: var(--success)'>✔ VERİ DOĞRULANDI</span>";
             
             let item = vocabulary.shift();
-            vocabulary.splice(5, 0, item); // 5 kelime sonra tekrar sor
+            if (item.score < 3) {
+                vocabulary.splice(15, 0, item); // SRS Aralığı
+            }
+            setTimeout(() => { feedback.textContent = ""; updateDashboard(); renderWord(); }, 1000);
+        } else {
+            vocabulary[0].score = 0;
+            feedback.innerHTML = `<span style='color: var(--danger)'>✘ SAPMA TESPİT EDİLDİ</span><br><small style="color:#64748b">Doğru Veri: ${vocabulary[0].tr}</small>`;
             
-            setTimeout(() => { feedback.textContent = ""; showWord(); }, 2500);
+            let item = vocabulary.shift();
+            vocabulary.splice(5, 0, item); // Hızlı Tekrar
+            setTimeout(() => { feedback.textContent = ""; updateDashboard(); renderWord(); }, 2500);
         }
-
-        save();
-        updateStats();
     }
 
-    function save() {
-        localStorage.setItem('romence_v3', JSON.stringify(vocabulary));
-        localStorage.setItem('romence_wrongs', wrongs);
-    }
-
-    function updateStats() {
-        const learned = localStorage.getItem('romence_learned') || "0";
-        document.getElementById('learned-count').textContent = learned;
-        document.getElementById('remaining-count').textContent = vocabulary.length;
-        document.getElementById('wrong-count').textContent = wrongs;
-        document.getElementById('status-text').textContent = `Toplam ${rawVocabulary.length} kelime üzerinden ilerliyorsun.`;
-    }
-
-    function resetGame() {
-        if (confirm("Tüm ilerlemeniz silinecek. Emin misiniz?")) {
+    function resetData() {
+        if(confirm("Tüm analitik veriler sıfırlanacak?")) {
             localStorage.clear();
             location.reload();
         }
@@ -3145,6 +3141,5 @@
 
     init();
 </script>
-
 </body>
 </html>
