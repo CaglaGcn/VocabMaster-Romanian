@@ -3,34 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romanian Data Trainer v7</title>
+    <title>Romanian Data Trainer v8</title>
     <style>
         :root { --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; --bg: #f1f5f9; }
         * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
-            background: var(--bg); 
-            display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; padding: 15px;
-            overflow: hidden;
+            background: var(--bg); display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px;
         }
         .container { 
             background: white; padding: 1.5rem; border-radius: 1.2rem; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-            width: 100%; max-width: 480px; text-align: center;
+            width: 100%; max-width: 500px; text-align: center;
             position: relative; z-index: 2;
         }
         .analytics-card { 
             background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; 
-            padding: 1.2rem; margin-bottom: 1.5rem;
+            padding: 1rem; margin-bottom: 1rem;
         }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .stat-item {
-            font-size: 0.75rem; font-weight: 700; padding: 8px;
-            background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
+            font-size: 0.7rem; font-weight: 700; padding: 6px;
+            background: #f8fafc; border-radius: 6px; border: 1px solid #f1f5f9;
         }
-        .progress-container { background: #e2e8f0; border-radius: 10px; height: 10px; margin: 12px 0; overflow: hidden; }
-        #progress-bar { background: linear-gradient(90deg, var(--success), #4ade80); height: 100%; width: 0%; transition: width 0.6s ease; }
+        .progress-container { background: #e2e8f0; border-radius: 10px; height: 8px; margin: 10px 0; overflow: hidden; }
+        #progress-bar { background: linear-gradient(90deg, var(--success), #4ade80); height: 100%; width: 0%; transition: width 0.5s ease; }
         
         .word-box { margin: 1.5rem 0; }
         .rom-word { font-size: clamp(1.8rem, 8vw, 2.5rem); font-weight: 800; color: #0f172a; margin: 0; }
@@ -41,24 +39,25 @@
         }
         input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-        .feedback { margin-top: 10px; min-height: 70px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .feedback { margin-top: 10px; min-height: 80px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .wrong-user-input { color: var(--danger); font-size: 0.9rem; text-decoration: line-through; }
+        .correct-reveal { color: #1e293b; font-size: 1.5rem; font-weight: 800; }
         
-        .wrong-user-input { color: var(--danger); font-size: 0.9rem; text-decoration: line-through; margin-bottom: 4px; }
-        .correct-reveal { color: #1e293b; font-size: 1.4rem; font-weight: 800; margin-top: 4px; }
-        
-        /* Kutlama Efekti Animasyonu */
-        .celebration {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 5rem; pointer-events: none; opacity: 0; z-index: 100;
+        /* Hata Logu Tablosu */
+        .error-log-container {
+            width: 100%; max-width: 500px; margin-top: 20px;
+            background: #fff; border-radius: 1rem; padding: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
         }
-        @keyframes popUp {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-        }
-        .animate-pop { animation: popUp 0.8s ease-out forwards; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; }
+        th { color: #64748b; border-bottom: 1px solid #e2e8f0; padding: 8px; }
+        td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        .tag-error { color: var(--danger); font-weight: bold; }
 
-        .btn-reset { margin-top: 1rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
+        .celebration { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; opacity: 0; z-index: 100; pointer-events: none; }
+        @keyframes popUp { 0% { opacity: 0; scale: 0.5; } 50% { opacity: 1; scale: 1.2; } 100% { opacity: 0; scale: 1; } }
+        .animate-pop { animation: popUp 0.7s ease-out forwards; }
+        .btn-reset { margin-top: 10px; background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 0.65rem; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -73,22 +72,27 @@
             <div class="stat-item" style="color: var(--danger)">BAŞARI: %<span id="accuracy">0</span></div>
             <div class="stat-item" style="color: #64748b">KALAN: <span id="rem-count">0</span></div>
         </div>
-        <div class="progress-container">
-            <div id="progress-bar"></div>
-        </div>
+        <div class="progress-container"><div id="progress-bar"></div></div>
     </div>
 
     <div class="word-box"><div class="rom-word" id="target-word">Yükleniyor...</div></div>
 
-    <input type="text" id="user-input" placeholder="Cevabı yazın ve Enter'a basın..." autocomplete="off">
-    
+    <input type="text" id="user-input" placeholder="Cevap yazın veya boş geçin..." autocomplete="off">
     <div class="feedback" id="feedback-msg"></div>
 
-    <button class="btn-reset" onclick="resetData()">Veritabanını Sıfırla</button>
+    <button class="btn-reset" onclick="resetData()">Verileri Sıfırla</button>
+</div>
+
+<div class="error-log-container">
+    <div style="font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; color: #1e293b;">📌 SON HATALI KAYITLAR (ERROR LOG)</div>
+    <table id="error-table">
+        <thead><tr><th>ROMENCE</th><th>SİZİN CEVABINIZ</th><th>DOĞRU VERİ</th></tr></thead>
+        <tbody id="error-body"></tbody>
+    </table>
 </div>
 
 <script>
-    // --- 3000 KELİMENİ BURAYA EKLE ---
+    // --- VERİ SETİNİ BURAYA EKLE ---
     const rawData = [
         { rom: "o, o", tr: "a, bir" },
 { rom: "abandon", tr: "terk etmek" },
@@ -3088,38 +3092,51 @@
     ];
 
     let vocabulary = [];
+    let errorLogs = JSON.parse(localStorage.getItem('rom_errors') || "[]");
     let totalAttempts = parseInt(localStorage.getItem('total_att') || "0");
     let correctAttempts = parseInt(localStorage.getItem('correct_att') || "0");
 
     function init() {
-        const saved = localStorage.getItem('rom_v7');
+        const saved = localStorage.getItem('rom_v8');
         if (saved) {
             vocabulary = JSON.parse(saved);
         } else {
-            vocabulary = rawData.map(item => ({ ...item, score: 0 })).sort(() => Math.random() - 0.5);
+            vocabulary = rawData.map(item => ({ ...item })).sort(() => Math.random() - 0.5);
         }
         updateDashboard();
+        updateErrorTable();
         renderWord();
     }
 
     function updateDashboard() {
-        const totalRaw = rawData.length;
-        const currentInList = vocabulary.length;
-        const learned = totalRaw - currentInList;
-        document.getElementById('progress-bar').style.width = (learned / totalRaw * 100) + "%";
+        const learned = rawData.length - vocabulary.length;
+        document.getElementById('progress-bar').style.width = (learned / rawData.length * 100) + "%";
         document.getElementById('learned-count').textContent = learned;
         document.getElementById('correct-count').textContent = correctAttempts;
-        document.getElementById('rem-count').textContent = currentInList;
+        document.getElementById('rem-count').textContent = vocabulary.length;
         const accuracy = totalAttempts === 0 ? 0 : Math.round((correctAttempts / totalAttempts) * 100);
         document.getElementById('accuracy').textContent = accuracy;
-        localStorage.setItem('rom_v7', JSON.stringify(vocabulary));
+
+        localStorage.setItem('rom_v8', JSON.stringify(vocabulary));
         localStorage.setItem('total_att', totalAttempts);
         localStorage.setItem('correct_att', correctAttempts);
+        localStorage.setItem('rom_errors', JSON.stringify(errorLogs));
+    }
+
+    function updateErrorTable() {
+        const body = document.getElementById('error-body');
+        body.innerHTML = errorLogs.slice(-5).reverse().map(log => `
+            <tr>
+                <td><b>${log.rom}</b></td>
+                <td class="tag-error">${log.user}</td>
+                <td style="color: var(--success)">${log.correct}</td>
+            </tr>
+        `).join('');
     }
 
     function renderWord() {
         if (vocabulary.length === 0) {
-            document.getElementById('target-word').textContent = "📊 ANALİZ BİTTİ!";
+            document.getElementById('target-word').textContent = "📊 TÜM VERİ İŞLENDİ!";
             document.getElementById('user-input').style.display = "none";
             return;
         }
@@ -3128,18 +3145,7 @@
         input.value = ""; input.disabled = false; input.focus();
     }
 
-    document.getElementById('user-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkLogic();
-    });
-
-    function triggerCelebration() {
-        const icon = document.getElementById('celeb-icon');
-        const icons = ["✨", "🎉", "🔥", "🚀", "🎯"];
-        icon.textContent = icons[Math.floor(Math.random() * icons.length)];
-        icon.classList.remove('animate-pop');
-        void icon.offsetWidth; // Reflow to restart animation
-        icon.classList.add('animate-pop');
-    }
+    document.getElementById('user-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkLogic(); });
 
     function checkLogic() {
         const input = document.getElementById('user-input');
@@ -3151,30 +3157,36 @@
         input.disabled = true;
 
         if (userVal !== "" && correctAnswers.includes(userVal)) {
-            // DOĞRU
+            // DOĞRU: Kelime listeden tamamen çıkarılır (Öğrenildi)
             correctAttempts++;
-            vocabulary[0].score += 1;
             triggerCelebration();
             feedback.innerHTML = "<span style='color: var(--success); font-weight:bold;'>✔ VERİ DOĞRULANDI</span>";
-            let item = vocabulary.shift();
-            if (item.score < 3) vocabulary.splice(15, 0, item);
+            vocabulary.shift(); 
             setTimeout(() => { feedback.innerHTML = ""; updateDashboard(); renderWord(); }, 1000);
         } else {
-            // YANLIŞ VEYA BOŞ
-            vocabulary[0].score = 0;
-            let userDisplay = userVal === "" ? "Analiz edilmedi" : userVal;
+            // YANLIŞ: Hata loguna ekle ve kelimeyi arkaya at
+            const wrongItem = vocabulary.shift();
+            errorLogs.push({ rom: wrongItem.rom, user: userVal || "BOŞ", correct: wrongItem.tr });
+            if (errorLogs.length > 20) errorLogs.shift(); // Logu temiz tut
+
             feedback.innerHTML = `
-                <div class="wrong-user-input">${userDisplay}</div>
-                <div style="font-size:0.7rem; color:#94a3b8; font-weight:bold;">SİSTEMDEKİ KARŞILIĞI:</div>
-                <div class="correct-reveal">${vocabulary[0].tr}</div>
+                <div class="wrong-user-input">${userVal || "BOŞ"}</div>
+                <div style="font-size:0.7rem; color:#94a3b8; font-weight:bold;">DOĞRU KARŞILIK:</div>
+                <div class="correct-reveal">${wrongItem.tr}</div>
             `;
-            let item = vocabulary.shift();
-            vocabulary.splice(5, 0, item);
-            setTimeout(() => { feedback.innerHTML = ""; updateDashboard(); renderWord(); }, 2800);
+            vocabulary.splice(8, 0, wrongItem); // 8 kelime sonra tekrar sor
+            setTimeout(() => { feedback.innerHTML = ""; updateDashboard(); updateErrorTable(); renderWord(); }, 2800);
         }
     }
 
-    function resetData() { if(confirm("Tüm analitik veriler sıfırlansın mı?")) { localStorage.clear(); location.reload(); } }
+    function triggerCelebration() {
+        const icon = document.getElementById('celeb-icon');
+        icon.classList.remove('animate-pop');
+        void icon.offsetWidth;
+        icon.classList.add('animate-pop');
+    }
+
+    function resetData() { if(confirm("Tüm ilerleme silinsin mi?")) { localStorage.clear(); location.reload(); } }
     init();
 </script>
 </body>
