@@ -3,38 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romence Kelime Ezberleme</title>
+    <title>Romence Kelime Ustası</title>
     <style>
-        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 95%; max-width: 500px; text-align: center; }
-        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; font-size: 0.9rem; }
-        .word { font-size: 2.2rem; font-weight: 800; margin: 25px 0; color: #1e293b; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; text-align: center; transition: all 0.2s; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .feedback { margin-top: 20px; min-height: 50px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .info { font-size: 0.75rem; color: #94a3b8; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
-        .remaining { font-size: 0.8rem; color: #64748b; margin-top: 5px; }
+        :root { --p: #3b82f6; --s: #22c55e; --d: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 1.2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 480px; text-align: center; }
+        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; font-size: 0.85rem; }
+        .word { font-size: 2.5rem; font-weight: 800; margin: 20px 0; color: #1e293b; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; outline: none; text-align: center; }
+        input:focus { border-color: var(--p); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        .feedback { margin-top: 15px; min-height: 40px; font-weight: 600; font-size: 1rem; }
+        .progress-text { font-size: 0.75rem; color: #94a3b8; margin-top: 10px; }
+        .btn-reset { margin-top: 20px; background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="stats">
-        <span style="color: var(--success)">Doğru: <span id="c">0</span></span>
-        <span style="color: var(--danger)">Yanlış: <span id="w">0</span></span>
+        <span style="color: var(--s)">Öğrenilen: <span id="learned-count">0</span></span>
+        <span style="color: #64748b">Kalan: <span id="remaining-count">0</span></span>
+        <span style="color: var(--d)">Hata: <span id="wrong-count">0</span></span>
     </div>
-    <div class="word" id="target">Yükleniyor...</div>
-    <input type="text" id="input" placeholder="Türkçe karşılığı..." autocomplete="off">
-    <div class="feedback" id="msg"></div>
-    <div class="remaining" id="rem-text">Kalan kelime: 0</div>
-    <div class="info">Onaylamak için <b>Enter</b>'a basın</div>
+
+    <div class="word" id="display-word">Yükleniyor...</div>
+    
+    <input type="text" id="answer-input" placeholder="Türkçesini yazın..." autocomplete="off">
+    
+    <div class="feedback" id="feedback"></div>
+    <div class="progress-text" id="status-text">Kelimeler karıştırılıyor...</div>
+
+    <button class="btn-reset" onclick="resetGame()">İlerlemeyi Sıfırla</button>
 </div>
 
 <script>
-    
-    const vocabulary = [
-      { rom: "o, o", tr: "a, bir" },
+    // --- KELİME LİSTESİ ---
+    const rawVocabulary = [
+        { rom: "o, o", tr: "a, bir" },
 { rom: "abandon", tr: "terk etmek" },
 { rom: "abilitate", tr: "kabiliyet" },
 { rom: "in stare", tr: "yapabilmek" },
@@ -3031,66 +3036,115 @@
 { rom: "zona", tr: "bölge" },
     ];
 
-    let list = [...vocabulary].sort(() => Math.random() - 0.5);
-    let corrects = 0, wrongs = 0;
+    // --- OYUN MANTIĞI ---
+    let vocabulary = [];
+    let wrongs = 0;
+    let learnedCount = 0;
 
-    const targetEl = document.getElementById('target');
-    const inputEl = document.getElementById('input');
-    const msgEl = document.getElementById('msg');
-    const cEl = document.getElementById('c'), wEl = document.getElementById('w'), rEl = document.getElementById('rem-text');
-
-    function next() {
-        if (list.length === 0) {
-            targetEl.textContent = "🎉 BİTTİ!";
-            inputEl.style.display = "none";
-            msgEl.textContent = "Tüm kelimeleri başarıyla öğrendiniz.";
-            rEl.textContent = "Harika iş!";
-            return;
+    // LocalStorage'dan verileri çek veya yeni başlat
+    function init() {
+        const savedData = localStorage.getItem('romence_v3');
+        if (savedData) {
+            vocabulary = JSON.parse(savedData);
+        } else {
+            // İlk kez başlıyorsa listeyi karıştır ve skor ekle
+            vocabulary = rawVocabulary
+                .map(item => ({ ...item, score: 0 }))
+                .sort(() => Math.random() - 0.5);
         }
-        
-        targetEl.textContent = list[0].rom;
-        inputEl.value = "";
-        inputEl.disabled = false;
-        inputEl.focus();
-        msgEl.innerHTML = "";
-        rEl.textContent = `Sırada bekleyen kelime: ${list.length}`;
+        wrongs = parseInt(localStorage.getItem('romence_wrongs') || "0");
+        updateStats();
+        showWord();
     }
 
-    inputEl.addEventListener('keypress', (e) => {
+    function showWord() {
+        if (vocabulary.length === 0) {
+            document.getElementById('display-word').textContent = "🎉 Tebrikler!";
+            document.getElementById('answer-input').style.display = "none";
+            document.getElementById('feedback').textContent = "Tüm kelimeleri öğrendiniz.";
+            return;
+        }
+
+        const current = vocabulary[0];
+        document.getElementById('display-word').textContent = current.rom;
+        document.getElementById('answer-input').value = "";
+        document.getElementById('answer-input').disabled = false;
+        document.getElementById('answer-input').focus();
+    }
+
+    document.getElementById('answer-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            const userVal = inputEl.value.trim().toLowerCase();
-            if (!userVal) return;
-
-            // Çoklu anlam desteği + Büyük/Küçük harf duyarsızlığı
-            const correctData = list[0].tr.toLowerCase();
-            const validAnswers = correctData.split(',').map(s => s.trim());
-
-            inputEl.disabled = true;
-
-            if (validAnswers.includes(userVal)) {
-                msgEl.innerHTML = "<span style='color: var(--success)'>✅ DOĞRU!</span>";
-                corrects++;
-                cEl.textContent = corrects;
-                
-                // Doğru bilindiği için listeden çıkar
-                list.shift(); 
-                
-                setTimeout(next, 1000);
-            } else {
-                msgEl.innerHTML = `<span style='color: var(--danger)'>❌ YANLIŞ!</span><br><small style='color:#64748b'>Cevap: ${list[0].tr}</small>`;
-                wrongs++;
-                wEl.textContent = wrongs;
-
-                // Yanlış bilinen kelimeyi listenin sonuna at (Tekrar sormak için)
-                const currentWord = list.shift();
-                list.push(currentWord);
-
-                setTimeout(next, 2000); // Yanlışta cevabı görmesi için biraz daha uzun bekler
-            }
+            check();
         }
     });
 
-    next();
+    function check() {
+        const input = document.getElementById('answer-input');
+        const feedback = document.getElementById('feedback');
+        const userVal = input.value.trim().toLowerCase();
+        
+        if (!userVal) return;
+
+        const correctData = vocabulary[0].tr.toLowerCase();
+        const validAnswers = correctData.split(',').map(s => s.trim());
+
+        input.disabled = true;
+
+        if (validAnswers.includes(userVal)) {
+            // DOĞRU CEVAP
+            vocabulary[0].score += 1;
+            feedback.innerHTML = "<span style='color: var(--s)'>✅ Doğru!</span>";
+            
+            let item = vocabulary.shift(); // Baştan al
+
+            if (item.score >= 3) {
+                // 3 kez bilenince listeden tamamen çıkar (Öğrenildi)
+                learnedCount = parseInt(localStorage.getItem('romence_learned') || "0") + 1;
+                localStorage.setItem('romence_learned', learnedCount);
+            } else {
+                // Henüz öğrenilmedi, araya 15 kelime koy (Aralıklı Tekrar)
+                vocabulary.splice(15, 0, item);
+            }
+            
+            setTimeout(() => { feedback.textContent = ""; showWord(); }, 1000);
+        } else {
+            // YANLIŞ CEVAP
+            wrongs++;
+            vocabulary[0].score = 0; // Skoru sıfırla
+            feedback.innerHTML = `<span style='color: var(--d)'>❌ Yanlış!</span><br><small>Doğru cevap: ${vocabulary[0].tr}</small>`;
+            
+            let item = vocabulary.shift();
+            vocabulary.splice(5, 0, item); // 5 kelime sonra tekrar sor
+            
+            setTimeout(() => { feedback.textContent = ""; showWord(); }, 2500);
+        }
+
+        save();
+        updateStats();
+    }
+
+    function save() {
+        localStorage.setItem('romence_v3', JSON.stringify(vocabulary));
+        localStorage.setItem('romence_wrongs', wrongs);
+    }
+
+    function updateStats() {
+        const learned = localStorage.getItem('romence_learned') || "0";
+        document.getElementById('learned-count').textContent = learned;
+        document.getElementById('remaining-count').textContent = vocabulary.length;
+        document.getElementById('wrong-count').textContent = wrongs;
+        document.getElementById('status-text').textContent = `Toplam ${rawVocabulary.length} kelime üzerinden ilerliyorsun.`;
+    }
+
+    function resetGame() {
+        if (confirm("Tüm ilerlemeniz silinecek. Emin misiniz?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    init();
 </script>
+
 </body>
 </html>
