@@ -6,14 +6,15 @@
     <title>Romence Kelime Ezberleme</title>
     <style>
         :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --bg: #f8fafc; }
-        body { font-family: sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 95%; max-width: 500px; text-align: center; }
-        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; }
-        .word { font-size: 2.5rem; font-weight: 800; margin: 20px 0; color: #1e293b; }
-        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; text-align: center; }
-        input:focus { border-color: var(--primary); }
-        .feedback { margin-top: 20px; min-height: 24px; font-weight: bold; }
-        .info { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; }
+        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; font-size: 0.9rem; }
+        .word { font-size: 2.2rem; font-weight: 800; margin: 25px 0; color: #1e293b; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; text-align: center; transition: all 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .feedback { margin-top: 20px; min-height: 50px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .info { font-size: 0.75rem; color: #94a3b8; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .remaining { font-size: 0.8rem; color: #64748b; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -21,19 +22,19 @@
 <div class="container">
     <div class="stats">
         <span style="color: var(--success)">Doğru: <span id="c">0</span></span>
-        <span id="p">0 / 0</span>
         <span style="color: var(--danger)">Yanlış: <span id="w">0</span></span>
     </div>
     <div class="word" id="target">Yükleniyor...</div>
-    <input type="text" id="input" placeholder="Türkçesini yazın..." autocomplete="off">
+    <input type="text" id="input" placeholder="Türkçe karşılığı..." autocomplete="off">
     <div class="feedback" id="msg"></div>
-    <div class="info">Enter tuşuna basarak cevaplayın.</div>
+    <div class="remaining" id="rem-text">Kalan kelime: 0</div>
+    <div class="info">Onaylamak için <b>Enter</b>'a basın</div>
 </div>
 
 <script>
     
     const vocabulary = [
-    { rom: "o, o", tr: "a, bir" },
+      { rom: "o, o", tr: "a, bir" },
 { rom: "abandon", tr: "terk etmek" },
 { rom: "abilitate", tr: "kabiliyet" },
 { rom: "in stare", tr: "yapabilmek" },
@@ -3027,48 +3028,65 @@
 { rom: "tu", tr: "kendin" },
 { rom: "tineret", tr: "gençlik" },
 { rom: "zero", tr: "sıfır" },
-{ rom: "zona", tr: "bölge" }
+{ rom: "zona", tr: "bölge" },
     ];
-    // --- KELİME LİSTESİ BİTİŞ ---
 
-    let current = 0, corrects = 0, wrongs = 0;
     let list = [...vocabulary].sort(() => Math.random() - 0.5);
+    let corrects = 0, wrongs = 0;
 
     const targetEl = document.getElementById('target');
     const inputEl = document.getElementById('input');
     const msgEl = document.getElementById('msg');
-    const cEl = document.getElementById('c'), wEl = document.getElementById('w'), pEl = document.getElementById('p');
+    const cEl = document.getElementById('c'), wEl = document.getElementById('w'), rEl = document.getElementById('rem-text');
 
     function next() {
-        if (current >= list.length) {
-            alert("Tebrikler! 3000 kelime bitti!");
+        if (list.length === 0) {
+            targetEl.textContent = "🎉 BİTTİ!";
+            inputEl.style.display = "none";
+            msgEl.textContent = "Tüm kelimeleri başarıyla öğrendiniz.";
+            rEl.textContent = "Harika iş!";
             return;
         }
-        targetEl.textContent = list[current].rom;
+        
+        targetEl.textContent = list[0].rom;
         inputEl.value = "";
         inputEl.disabled = false;
         inputEl.focus();
-        msgEl.textContent = "";
-        pEl.textContent = `${current + 1} / ${list.length}`;
+        msgEl.innerHTML = "";
+        rEl.textContent = `Sırada bekleyen kelime: ${list.length}`;
     }
 
     inputEl.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            const val = inputEl.value.trim().toLowerCase();
-            const answers = list[current].tr.toLowerCase().split(',').map(x => x.trim());
-            
-            inputEl.disabled = true;
-            if (answers.includes(val)) {
-                msgEl.textContent = "✅ DOĞRU!";
-                msgEl.style.color = "var(--success)";
-                corrects++; cEl.textContent = corrects;
-            } else {
-                msgEl.textContent = `❌ YANLIŞ! Cevap: ${list[current].tr}`;
-                msgEl.style.color = "var(--danger)";
-                wrongs++; wEl.textContent = wrongs;
-            }
+            const userVal = inputEl.value.trim().toLowerCase();
+            if (!userVal) return;
 
-            setTimeout(() => { current++; next(); }, 1200);
+            // Çoklu anlam desteği + Büyük/Küçük harf duyarsızlığı
+            const correctData = list[0].tr.toLowerCase();
+            const validAnswers = correctData.split(',').map(s => s.trim());
+
+            inputEl.disabled = true;
+
+            if (validAnswers.includes(userVal)) {
+                msgEl.innerHTML = "<span style='color: var(--success)'>✅ DOĞRU!</span>";
+                corrects++;
+                cEl.textContent = corrects;
+                
+                // Doğru bilindiği için listeden çıkar
+                list.shift(); 
+                
+                setTimeout(next, 1000);
+            } else {
+                msgEl.innerHTML = `<span style='color: var(--danger)'>❌ YANLIŞ!</span><br><small style='color:#64748b'>Cevap: ${list[0].tr}</small>`;
+                wrongs++;
+                wEl.textContent = wrongs;
+
+                // Yanlış bilinen kelimeyi listenin sonuna at (Tekrar sormak için)
+                const currentWord = list.shift();
+                list.push(currentWord);
+
+                setTimeout(next, 2000); // Yanlışta cevabı görmesi için biraz daha uzun bekler
+            }
         }
     });
 
