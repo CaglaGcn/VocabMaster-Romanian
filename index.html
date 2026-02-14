@@ -3,125 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romanian Data Trainer v5</title>
+    <title>Romanian Data Trainer v7</title>
     <style>
         :root { --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; --bg: #f1f5f9; }
-        
-        * { box-sizing: border-box; } /* Taşmaları engelleyen kritik kural */
-
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
             background: var(--bg); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 15px;
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 15px;
+            overflow: hidden;
         }
-
         .container { 
-            background: white; 
-            padding: 1.5rem; 
-            border-radius: 1.2rem; 
+            background: white; padding: 1.5rem; border-radius: 1.2rem; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-            width: 100%; 
-            max-width: 480px; 
-            text-align: center;
+            width: 100%; max-width: 480px; text-align: center;
+            position: relative; z-index: 2;
         }
-
-        /* Analitik Panel Düzenlemesi */
         .analytics-card { 
-            background: #ffffff; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 1rem; 
-            padding: 1.2rem; 
-            margin-bottom: 1.5rem;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; 
+            padding: 1.2rem; margin-bottom: 1.5rem;
         }
-
-        .stat-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-            margin-bottom: 15px;
-        }
-
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .stat-item {
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 8px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #f1f5f9;
+            font-size: 0.75rem; font-weight: 700; padding: 8px;
+            background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
         }
-
-        .progress-container { 
-            background: #e2e8f0; 
-            border-radius: 10px; 
-            height: 10px; 
-            margin: 12px 0; 
-            overflow: hidden; 
-        }
-
-        #progress-bar { 
-            background: linear-gradient(90deg, var(--success), #4ade80); 
-            height: 100%; 
-            width: 0%; 
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-
+        .progress-container { background: #e2e8f0; border-radius: 10px; height: 10px; margin: 12px 0; overflow: hidden; }
+        #progress-bar { background: linear-gradient(90deg, var(--success), #4ade80); height: 100%; width: 0%; transition: width 0.6s ease; }
+        
         .word-box { margin: 1.5rem 0; }
-        .rom-word { 
-            font-size: clamp(1.8rem, 8vw, 2.5rem); /* Dinamik font boyutu */
-            font-weight: 800; 
-            color: #0f172a; 
-            margin: 0; 
-            word-wrap: break-word;
-        }
-
-        /* Giriş Alanı Düzenlemesi */
-        .input-wrapper { width: 100%; margin: 10px 0; }
+        .rom-word { font-size: clamp(1.8rem, 8vw, 2.5rem); font-weight: 800; color: #0f172a; margin: 0; }
         
         input { 
-            width: 100%; 
-            padding: 14px; 
-            border: 2px solid #cbd5e1; 
-            border-radius: 12px; 
-            font-size: 1.1rem; 
-            text-align: center; 
-            outline: none; 
-            transition: all 0.2s;
-            background: #fff;
+            width: 100%; padding: 14px; border: 2px solid #cbd5e1; border-radius: 12px; 
+            font-size: 1.1rem; text-align: center; outline: none; transition: 0.2s;
         }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-        input:focus { 
-            border-color: var(--primary); 
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+        .feedback { margin-top: 10px; min-height: 70px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        
+        .wrong-user-input { color: var(--danger); font-size: 0.9rem; text-decoration: line-through; margin-bottom: 4px; }
+        .correct-reveal { color: #1e293b; font-size: 1.4rem; font-weight: 800; margin-top: 4px; }
+        
+        /* Kutlama Efekti Animasyonu */
+        .celebration {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 5rem; pointer-events: none; opacity: 0; z-index: 100;
         }
+        @keyframes popUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+        .animate-pop { animation: popUp 0.8s ease-out forwards; }
 
-        .feedback { 
-            margin-top: 10px; 
-            min-height: 50px; 
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .btn-reset { 
-            margin-top: 1rem; 
-            background: none; 
-            border: none; 
-            color: #94a3b8; 
-            cursor: pointer; 
-            font-size: 0.7rem; 
-            text-decoration: underline; 
-        }
+        .btn-reset { margin-top: 1rem; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.7rem; text-decoration: underline; }
     </style>
 </head>
 <body>
+
+<div id="celeb-icon" class="celebration">✨</div>
 
 <div class="container">
     <div class="analytics-card">
@@ -134,16 +76,11 @@
         <div class="progress-container">
             <div id="progress-bar"></div>
         </div>
-        <div style="font-size: 0.65rem; color: #94a3b8; font-weight: bold; letter-spacing: 1px;">VERİ İŞLEME İLERLEMESİ</div>
     </div>
 
-    <div class="word-box">
-        <div class="rom-word" id="target-word">Yükleniyor...</div>
-    </div>
+    <div class="word-box"><div class="rom-word" id="target-word">Yükleniyor...</div></div>
 
-    <div class="input-wrapper">
-        <input type="text" id="user-input" placeholder="Türkçe karşılığını yazın..." autocomplete="off">
-    </div>
+    <input type="text" id="user-input" placeholder="Cevabı yazın ve Enter'a basın..." autocomplete="off">
     
     <div class="feedback" id="feedback-msg"></div>
 
@@ -151,9 +88,9 @@
 </div>
 
 <script>
-    // --- BURAYA KELİMELERİNİ YAPIŞTIR ---
+    // --- 3000 KELİMENİ BURAYA EKLE ---
     const rawData = [
-     { rom: "o, o", tr: "a, bir" },
+        { rom: "o, o", tr: "a, bir" },
 { rom: "abandon", tr: "terk etmek" },
 { rom: "abilitate", tr: "kabiliyet" },
 { rom: "in stare", tr: "yapabilmek" },
@@ -3155,7 +3092,7 @@
     let correctAttempts = parseInt(localStorage.getItem('correct_att') || "0");
 
     function init() {
-        const saved = localStorage.getItem('rom_v5');
+        const saved = localStorage.getItem('rom_v7');
         if (saved) {
             vocabulary = JSON.parse(saved);
         } else {
@@ -3169,17 +3106,13 @@
         const totalRaw = rawData.length;
         const currentInList = vocabulary.length;
         const learned = totalRaw - currentInList;
-        
-        const progressPercent = (learned / totalRaw) * 100;
-        document.getElementById('progress-bar').style.width = progressPercent + "%";
+        document.getElementById('progress-bar').style.width = (learned / totalRaw * 100) + "%";
         document.getElementById('learned-count').textContent = learned;
         document.getElementById('correct-count').textContent = correctAttempts;
         document.getElementById('rem-count').textContent = currentInList;
-
         const accuracy = totalAttempts === 0 ? 0 : Math.round((correctAttempts / totalAttempts) * 100);
         document.getElementById('accuracy').textContent = accuracy;
-
-        localStorage.setItem('rom_v5', JSON.stringify(vocabulary));
+        localStorage.setItem('rom_v7', JSON.stringify(vocabulary));
         localStorage.setItem('total_att', totalAttempts);
         localStorage.setItem('correct_att', correctAttempts);
     }
@@ -3192,52 +3125,56 @@
         }
         document.getElementById('target-word').textContent = vocabulary[0].rom;
         const input = document.getElementById('user-input');
-        input.value = "";
-        input.disabled = false;
-        input.focus();
+        input.value = ""; input.disabled = false; input.focus();
     }
 
     document.getElementById('user-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkLogic();
     });
 
+    function triggerCelebration() {
+        const icon = document.getElementById('celeb-icon');
+        const icons = ["✨", "🎉", "🔥", "🚀", "🎯"];
+        icon.textContent = icons[Math.floor(Math.random() * icons.length)];
+        icon.classList.remove('animate-pop');
+        void icon.offsetWidth; // Reflow to restart animation
+        icon.classList.add('animate-pop');
+    }
+
     function checkLogic() {
         const input = document.getElementById('user-input');
         const feedback = document.getElementById('feedback-msg');
         const userVal = input.value.trim().toLowerCase();
-        if (!userVal) return;
-
+        
         totalAttempts++;
         const correctAnswers = vocabulary[0].tr.toLowerCase().split(',').map(s => s.trim());
         input.disabled = true;
 
-        if (correctAnswers.includes(userVal)) {
+        if (userVal !== "" && correctAnswers.includes(userVal)) {
+            // DOĞRU
             correctAttempts++;
             vocabulary[0].score += 1;
-            feedback.innerHTML = "<span style='color: var(--success)'>✔ VERİ DOĞRULANDI</span>";
-            
+            triggerCelebration();
+            feedback.innerHTML = "<span style='color: var(--success); font-weight:bold;'>✔ VERİ DOĞRULANDI</span>";
             let item = vocabulary.shift();
-            if (item.score < 3) {
-                vocabulary.splice(15, 0, item);
-            }
-            setTimeout(() => { feedback.textContent = ""; updateDashboard(); renderWord(); }, 1000);
+            if (item.score < 3) vocabulary.splice(15, 0, item);
+            setTimeout(() => { feedback.innerHTML = ""; updateDashboard(); renderWord(); }, 1000);
         } else {
+            // YANLIŞ VEYA BOŞ
             vocabulary[0].score = 0;
-            feedback.innerHTML = `<span style='color: var(--danger)'>✘ SAPMA TESPİT EDİLDİ</span><br><small style="color:#64748b">Doğru Veri: ${vocabulary[0].tr}</small>`;
-            
+            let userDisplay = userVal === "" ? "Analiz edilmedi" : userVal;
+            feedback.innerHTML = `
+                <div class="wrong-user-input">${userDisplay}</div>
+                <div style="font-size:0.7rem; color:#94a3b8; font-weight:bold;">SİSTEMDEKİ KARŞILIĞI:</div>
+                <div class="correct-reveal">${vocabulary[0].tr}</div>
+            `;
             let item = vocabulary.shift();
             vocabulary.splice(5, 0, item);
-            setTimeout(() => { feedback.textContent = ""; updateDashboard(); renderWord(); }, 2500);
+            setTimeout(() => { feedback.innerHTML = ""; updateDashboard(); renderWord(); }, 2800);
         }
     }
 
-    function resetData() {
-        if(confirm("Tüm analitik veriler sıfırlanacak?")) {
-            localStorage.clear();
-            location.reload();
-        }
-    }
-
+    function resetData() { if(confirm("Tüm analitik veriler sıfırlansın mı?")) { localStorage.clear(); location.reload(); } }
     init();
 </script>
 </body>
