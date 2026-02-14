@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romence Kelime Ezberleme</title>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --bg: #f8fafc; }
+        body { font-family: sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 95%; max-width: 500px; text-align: center; }
+        .stats { display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; }
+        .word { font-size: 2.5rem; font-weight: 800; margin: 20px 0; color: #1e293b; }
+        input { width: 100%; padding: 15px; font-size: 1.2rem; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; text-align: center; }
+        input:focus { border-color: var(--primary); }
+        .feedback { margin-top: 20px; min-height: 24px; font-weight: bold; }
+        .info { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="stats">
+        <span style="color: var(--success)">Doğru: <span id="c">0</span></span>
+        <span id="p">0 / 0</span>
+        <span style="color: var(--danger)">Yanlış: <span id="w">0</span></span>
+    </div>
+    <div class="word" id="target">Yükleniyor...</div>
+    <input type="text" id="input" placeholder="Türkçesini yazın..." autocomplete="off">
+    <div class="feedback" id="msg"></div>
+    <div class="info">Enter tuşuna basarak cevaplayın.</div>
+</div>
+
+<script>
+    // --- KELİME LİSTESİ BAŞLANGIÇ ---
+    // Elindeki 3000 kelimeyi bu parantezlerin arasına yapıştır.
+    const vocabulary = [
+        { rom: "Casă", tr: "Ev" },
+        { rom: "Apă", tr: "Su" },
+        { rom: "Pâine", tr: "Ekmek" },
+        // Buraya diğer 2997 kelimeyi aynı formatta ekle...
+    ];
+    // --- KELİME LİSTESİ BİTİŞ ---
+
+    let current = 0, corrects = 0, wrongs = 0;
+    let list = [...vocabulary].sort(() => Math.random() - 0.5);
+
+    const targetEl = document.getElementById('target');
+    const inputEl = document.getElementById('input');
+    const msgEl = document.getElementById('msg');
+    const cEl = document.getElementById('c'), wEl = document.getElementById('w'), pEl = document.getElementById('p');
+
+    function next() {
+        if (current >= list.length) {
+            alert("Tebrikler! 3000 kelime bitti!");
+            return;
+        }
+        targetEl.textContent = list[current].rom;
+        inputEl.value = "";
+        inputEl.disabled = false;
+        inputEl.focus();
+        msgEl.textContent = "";
+        pEl.textContent = `${current + 1} / ${list.length}`;
+    }
+
+    inputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const val = inputEl.value.trim().toLowerCase();
+            const answers = list[current].tr.toLowerCase().split(',').map(x => x.trim());
+            
+            inputEl.disabled = true;
+            if (answers.includes(val)) {
+                msgEl.textContent = "✅ DOĞRU!";
+                msgEl.style.color = "var(--success)";
+                corrects++; cEl.textContent = corrects;
+            } else {
+                msgEl.textContent = `❌ YANLIŞ! Cevap: ${list[current].tr}`;
+                msgEl.style.color = "var(--danger)";
+                wrongs++; wEl.textContent = wrongs;
+            }
+
+            setTimeout(() => { current++; next(); }, 1200);
+        }
+    });
+
+    next();
+</script>
+</body>
+</html>
